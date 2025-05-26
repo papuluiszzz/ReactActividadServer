@@ -18,6 +18,7 @@ import {
     Select,
     FormControl,
     InputLabel,
+    SelectChangeEvent,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
@@ -89,11 +90,23 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
         }
     }, [userToEdit]);
 
+    // Debug: Agregar log para verificar la lista de clientes
+    useEffect(() => {
+        console.log('=== DEBUG CLIENTES ===');
+        console.log('clientesList:', clientesList);
+        console.log('Tipo de clientesList:', typeof clientesList);
+        console.log('Es array:', Array.isArray(clientesList));
+        console.log('Número de clientes:', clientesList?.length || 0);
+        console.log('Primer cliente:', clientesList?.[0]);
+        console.log('=====================');
+    }, [clientesList]);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSelectChange = (e: any) => {
+    // Corregir el manejo del Select
+    const handleSelectChange = (e: SelectChangeEvent<string>) => {
         console.log('Cliente seleccionado:', e.target.value);
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
@@ -419,27 +432,60 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                                             })
                                         }}
                                     >
-                                        <MenuItem value="" disabled>
+                                        <MenuItem value="">
                                             <em>-- Seleccione un cliente --</em>
                                         </MenuItem>
-                                        {clientesList && clientesList.length > 0 ? (
-                                            clientesList.map((cliente) => (
-                                                <MenuItem key={cliente.idCliente} value={cliente.idCliente.toString()}>
-                                                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                                        <Typography variant="body1" fontWeight="500">
-                                                            {`${cliente.nombre} ${cliente.apellido}`}
-                                                        </Typography>
-                                                        <Typography variant="caption" color="text.secondary">
-                                                            ID: {cliente.idCliente} • {cliente.email}
-                                                        </Typography>
-                                                    </Box>
-                                                </MenuItem>
-                                            ))
-                                        ) : (
-                                            <MenuItem value="" disabled>
-                                                <em>No hay clientes disponibles</em>
-                                            </MenuItem>
-                                        )}
+                                        {(() => {
+                                            console.log('Renderizando clientes. Array:', clientesList);
+                                            console.log('Longitud:', clientesList?.length);
+                                            
+                                            if (!clientesList) {
+                                                console.log('clientesList es null/undefined');
+                                                return (
+                                                    <MenuItem value="" disabled>
+                                                        <em>Cargando clientes...</em>
+                                                    </MenuItem>
+                                                );
+                                            }
+                                            
+                                            if (!Array.isArray(clientesList)) {
+                                                console.log('clientesList no es un array:', typeof clientesList);
+                                                return (
+                                                    <MenuItem value="" disabled>
+                                                        <em>Error: datos de clientes inválidos</em>
+                                                    </MenuItem>
+                                                );
+                                            }
+                                            
+                                            if (clientesList.length === 0) {
+                                                console.log('clientesList está vacío');
+                                                return (
+                                                    <MenuItem value="" disabled>
+                                                        <em>No hay clientes disponibles</em>
+                                                    </MenuItem>
+                                                );
+                                            }
+                                            
+                                            console.log('Mapeando clientes:', clientesList);
+                                            return clientesList.map((cliente, index) => {
+                                                console.log(`Cliente ${index}:`, cliente);
+                                                
+                                                // Verificar si el cliente tiene las propiedades necesarias
+                                                if (!cliente || !cliente.nombre || !cliente.apellido) {
+                                                    console.warn(`Cliente ${index} tiene datos incompletos:`, cliente);
+                                                    return null;
+                                                }
+                                                
+                                                const key = cliente.idCliente || cliente.id || index;
+                                                const value = (cliente.idCliente || cliente.id || '').toString();
+                                                
+                                                return (
+                                                    <MenuItem key={key} value={value}>
+                                                        {`${cliente.nombre} ${cliente.apellido}`}
+                                                    </MenuItem>
+                                                );
+                                            }).filter(Boolean); // Filtrar elementos null
+                                        })()}
                                     </Select>
                                 </FormControl>
                             </Grid>
