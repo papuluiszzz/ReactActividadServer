@@ -1,39 +1,36 @@
-import React, { useEffect, useState } from "react";
+const handleCloseAlert = () => {
+        setAlert(prev => ({ ...prev, open: false }));
+    };
+
+    const resetForm = () => {
+        setUserToEdit(null);
+        setFormData({ nombres: '', apellidos: '', telefono:'', email: '' });
+    };    const handleUserSelect = (e: React.ChangeEvent<{ value: unknown }>) => {
+        const selectedId = e.target.value as number;
+        const selectedUser = usersList.find((u) => u.idCliente === selectedId);
+        setUserToEdit(selectedUser || null);
+    };import React, { useEffect, useState } from "react";
 import {
     Button,
     TextField,
     Box,
-    Select,
-    MenuItem,
-    InputLabel,
-    FormControl,
     Snackbar,
     Alert,
     Typography,
-    Paper,
     CircularProgress,
-    IconButton,
     Divider,
     Grid,
-    Fade,
-    Backdrop,
     useTheme,
     useMediaQuery,
-    Avatar,
-    Chip,
     Card,
     CardContent,
-    Tooltip,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
 import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
-import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
-import CloseIcon from '@mui/icons-material/Close';
 import EmailIcon from '@mui/icons-material/Email';
 import PersonIcon from '@mui/icons-material/Person';
 import BadgeIcon from '@mui/icons-material/Badge';
-import PassIcon from '@mui/icons-material/Password';
 
 interface FormCliente {
     idCliente: number | null;
@@ -41,7 +38,7 @@ interface FormCliente {
     apellido: string;
     telefono: string;
     email: string;
-    password: string;
+    
 }
 
 interface Props {
@@ -60,7 +57,6 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
         apellidos: '',
         telefono:'',
         email: '',
-        password:'',
     });
 
     const [alert, setAlert] = useState<{ open: boolean; type: 'success' | 'error' | 'info'; message: string }>({
@@ -70,7 +66,6 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [focusedField, setFocusedField] = useState<string | null>(null);
 
     useEffect(() => {
         if (userToEdit) {
@@ -79,10 +74,9 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                 apellidos: userToEdit.apellido,
                 telefono: userToEdit.telefono,
                 email: userToEdit.email,
-                password: userToEdit.password,
             });
         } else {
-            setFormData({ nombres: '', apellidos: '', telefono: '', email: '', password:'' });
+            setFormData({ nombres: '', apellidos: '', telefono: '', email: '' });
         }
     }, [userToEdit]);
 
@@ -90,28 +84,7 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleFocus = (fieldName: string) => {
-        setFocusedField(fieldName);
-    };
 
-    const handleBlur = () => {
-        setFocusedField(null);
-    };
-
-    const handleUserSelect = (e: React.ChangeEvent<{ value: unknown }>) => {
-        const selectedId = e.target.value as number;
-        const selectedUser = usersList.find((u) => u.idCliente === selectedId);
-        setUserToEdit(selectedUser || null);
-    };
-
-    const handleCloseAlert = () => {
-        setAlert(prev => ({ ...prev, open: false }));
-    };
-
-    const resetForm = () => {
-        setUserToEdit(null);
-        setFormData({ nombres: '', apellidos: '', telefono:'', email: '', password:'' });
-    };
 
     const validateForm = () => {
         if (!formData.nombres.trim()) {
@@ -159,7 +132,7 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
         setIsSubmitting(true);
         console.log("Datos que se van a enviar", formData);
 
-        const url = 'http://localhost:8000/clientes';
+        const url = 'http://localhost:8000/cliente';
         const method = userToEdit ? 'PUT' : 'POST';
 
         const payload = userToEdit?{
@@ -167,15 +140,13 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
             nombre: formData.nombres,
             apellido: formData.apellidos,
             telefono: formData.telefono,
-            email: formData.email,
-            password: formData.password,
+            email: formData.email
         }
         :{
             nombre: formData.nombres,
             apellido: formData.apellidos,
             telefono: formData.telefono,
-            email: formData.email,
-            password: formData.password,
+            email: formData.email
         }
 
         try {
@@ -211,341 +182,147 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
         }
     };
 
-    const getInitials = (nombres: string, apellidos: string) => {
-        const n = nombres.charAt(0).toUpperCase();
-        const a = apellidos.charAt(0).toUpperCase();
-        return n + a;
-    };
 
-    const getAvatarColor = (nombre: string) => {
-        const colors = [
-            theme.palette.primary.main,
-            theme.palette.secondary.main,
-            theme.palette.error.main,
-            theme.palette.warning.main,
-            theme.palette.info.main,
-            theme.palette.success.main,
-        ];
-
-        const charSum = nombre.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-        return colors[charSum % colors.length];
-    };
 
     return (
-        <Fade in={true} timeout={500}>
-            <Card
-                elevation={4}
-                sx={{
-                    borderRadius: 3,
-                    overflow: 'visible',
-                    background: `linear-gradient(145deg, ${alpha(theme.palette.background.paper, 0.8)}, ${theme.palette.background.paper})`,
-                    backdropFilter: 'blur(10px)',
-                    boxShadow: `0 10px 40px -10px ${alpha(theme.palette.primary.main, 0.2)}`,
-                    position: 'relative',
-                    '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: '8px',
-                        background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                        borderTopLeftRadius: '12px',
-                        borderTopRightRadius: '12px',
-                    }
-                }}
-            >
-                <CardContent sx={{ p: { xs: 2, sm: 4 } }}>
-                    <Box component="form" onSubmit={handleSubmit} noValidate>
-                        <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
-                            <Typography
-                                variant="h5"
-                                fontWeight="600"
-                            >
-                                {userToEdit ? 'Actualizar Usuario' : 'Registro de Usuario'}
-                            </Typography>
-                        </Box>
+        <Card
+            elevation={2}
+            sx={{
+                borderRadius: 2,
+                bgcolor: 'background.paper',
+            }}
+        >
+            <CardContent sx={{ p: { xs: 2, sm: 4 } }}>
+                <Box component="form" onSubmit={handleSubmit} noValidate>
+                    <Box display="flex" justifyContent="center" mb={3}>
+                        <Typography
+                            variant="h5"
+                            fontWeight="600"
+                            textAlign="center"
+                        >
+                            {userToEdit ? 'Actualizar Usuario' : 'Registro de Usuario'}
+                        </Typography>
+                    </Box>
 
-                        <Divider sx={{ mb: 4, opacity: 0.6 }} />
+                    <Divider sx={{ mb: 4 }} />
 
-                        <Grid container spacing={3}>
-                            <Grid item xs={12}>
-                                <FormControl fullWidth variant="filled">
-                                    <InputLabel id="user-select-label">Seleccionar usuario existente</InputLabel>
-                                    <Select
-                                        labelId="user-select-label"
-                                        value={userToEdit?.idCliente ?? ''}
-                                        onChange={handleUserSelect}
-                                        sx={{
-                                            borderRadius: 1.5,
-                                            '& .MuiSelect-select': {
-                                                py: 1.5
-                                            }
-                                        }}
-                                    >
-                                        <MenuItem value="">
-                                            <Box display="flex" alignItems="center">
-                                                <PersonAddAltIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-                                                <Typography fontWeight="medium">Crear nuevo usuario</Typography>
-                                            </Box>
-                                        </MenuItem>
-                                        <Divider />
-                                        {usersList.map((u) => (
-                                            <MenuItem key={u.idCliente} value={u.idCliente}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Avatar
-                                                        sx={{
-                                                            width: 28,
-                                                            height: 28,
-                                                            mr: 1.5,
-                                                            bgcolor: getAvatarColor(u.nombre),
-                                                            fontSize: '0.75rem'
-                                                        }}
-                                                    >
-                                                        {getInitials(u.nombre, u.apellido)}
-                                                    </Avatar>
-                                                    <Box>
-                                                        <Typography variant="body2" fontWeight="500">
-                                                            {u.nombre} {u.apellido}
-                                                        </Typography>
-                                                        <Typography variant="caption" color="text.secondary">
-                                                            {u.email}
-                                                        </Typography>
-                                                    </Box>
-                                                </Box>
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                            </Grid>
+                    <Grid container spacing={3}>
 
-                            <Grid item xs={12} md={6}>
-                                <TextField
-                                    name="nombres"
-                                    label="Nombres"
-                                    value={formData.nombres}
-                                    onChange={handleChange}
-                                    onFocus={() => handleFocus('nombres')}
-                                    onBlur={handleBlur}
-                                    variant="outlined"
-                                    fullWidth
-                                    required
-                                    InputProps={{
-                                        startAdornment: (
-                                            <PersonIcon
-                                                color={focusedField === 'nombres' ? 'primary' : 'action'}
-                                                sx={{ mr: 1 }}
-                                            />
-                                        ),
-                                    }}
-                                    sx={{
-                                        '& .MuiOutlinedInput-root': {
-                                            borderRadius: 2,
-                                            transition: theme.transitions.create(['box-shadow']),
-                                            ...(focusedField === 'nombres' && {
-                                                boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`
-                                            })
-                                        }
-                                    }}
-                                />
-                            </Grid>
-
-                            <Grid item xs={12} md={6}>
-                                <TextField
-                                    name="apellidos"
-                                    label="Apellidos"
-                                    value={formData.apellidos}
-                                    onChange={handleChange}
-                                    onFocus={() => handleFocus('apellidos')}
-                                    onBlur={handleBlur}
-                                    variant="outlined"
-                                    fullWidth
-                                    required
-                                    InputProps={{
-                                        startAdornment: (
-                                            <BadgeIcon
-                                                color={focusedField === 'apellidos' ? 'primary' : 'action'}
-                                                sx={{ mr: 1 }}
-                                            />
-                                        ),
-                                    }}
-                                    sx={{
-                                        '& .MuiOutlinedInput-root': {
-                                            borderRadius: 2,
-                                            transition: theme.transitions.create(['box-shadow']),
-                                            ...(focusedField === 'apellidos' && {
-                                                boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`
-                                            })
-                                        }
-                                    }}
-                                />
-                            </Grid>
-
-                            <Grid item xs={12} md={6}>
-                                <TextField
-                                    name="telefono"
-                                    label="Telefono"
-                                    value={formData.telefono}
-                                    onChange={handleChange}
-                                    onFocus={() => handleFocus('telefono')}
-                                    onBlur={handleBlur}
-                                    variant="outlined"
-                                    fullWidth
-                                    required
-                                    InputProps={{
-                                        startAdornment: (
-                                            <BadgeIcon
-                                                color={focusedField === 'telefono' ? 'primary' : 'action'}
-                                                sx={{ mr: 1 }}
-                                            />
-                                        ),
-                                    }}
-                                    sx={{
-                                        '& .MuiOutlinedInput-root': {
-                                            borderRadius: 2,
-                                            transition: theme.transitions.create(['box-shadow']),
-                                            ...(focusedField === 'telefono' && {
-                                                boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`
-                                            })
-                                        }
-                                    }}
-                                />
-                            </Grid>
-
-                            <Grid item xs={12}>
-                                <TextField
-                                    name="email"
-                                    label="Correo electrónico"
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    onFocus={() => handleFocus('email')}
-                                    onBlur={handleBlur}
-                                    variant="outlined"
-                                    fullWidth
-                                    required
-                                    InputProps={{
-                                        startAdornment: (
-                                            <EmailIcon
-                                                color={focusedField === 'email' ? 'primary' : 'action'}
-                                                sx={{ mr: 1 }}
-                                            />
-                                        ),
-                                    }}
-                                    sx={{
-                                        '& .MuiOutlinedInput-root': {
-                                            borderRadius: 2,
-                                            transition: theme.transitions.create(['box-shadow']),
-                                            ...(focusedField === 'email' && {
-                                                boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`
-                                            })
-                                        }
-                                    }}
-                                />
-                            </Grid>
-
-                            <Grid item xs={12} md={6}>
-                                <TextField
-                                    name="password"
-                                    label="Password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    onFocus={() => handleFocus('password')}
-                                    onBlur={handleBlur}
-                                    variant="outlined"
-                                    fullWidth
-                                    required
-                                    InputProps={{
-                                        startAdornment: (
-                                            <PassIcon
-                                                color={focusedField === 'password' ? 'primary' : 'action'}
-                                                sx={{ mr: 1 }}
-                                            />
-                                        ),
-                                    }}
-                                    sx={{
-                                        '& .MuiOutlinedInput-root': {
-                                            borderRadius: 2,
-                                            transition: theme.transitions.create(['box-shadow']),
-                                            ...(focusedField === 'password' && {
-                                                boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`
-                                            })
-                                        }
-                                    }}
-                                />
-                            </Grid>
-
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                name="nombres"
+                                label="Nombres"
+                                value={formData.nombres}
+                                onChange={handleChange}
+                                variant="outlined"
+                                fullWidth
+                                required
+                                InputProps={{
+                                    startAdornment: (
+                                        <PersonIcon sx={{ mr: 1, color: 'action.active' }} />
+                                    ),
+                                }}
+                            />
                         </Grid>
 
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                flexDirection: isMobile ? 'column' : 'row',
-                                gap: 2,
-                                mt: 4,
-                                '& .MuiButton-root': {
-                                    borderRadius: 2,
-                                    py: 1.5,
-                                    fontWeight: 500,
-                                    letterSpacing: '0.5px',
-                                    transition: 'transform 0.2s, box-shadow 0.2s',
-                                    '&:hover:not(:disabled)': {
-                                        transform: 'translateY(-2px)',
-                                        boxShadow: `0 6px 20px -5px ${alpha(theme.palette.primary.main, 0.4)}`
-                                    }
-                                }
-                            }}
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                name="apellidos"
+                                label="Apellidos"
+                                value={formData.apellidos}
+                                onChange={handleChange}
+                                variant="outlined"
+                                fullWidth
+                                required
+                                InputProps={{
+                                    startAdornment: (
+                                        <BadgeIcon sx={{ mr: 1, color: 'action.active' }} />
+                                    ),
+                                }}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                name="telefono"
+                                label="Telefono"
+                                value={formData.telefono}
+                                onChange={handleChange}
+                                variant="outlined"
+                                fullWidth
+                                required
+                                InputProps={{
+                                    startAdornment: (
+                                        <BadgeIcon sx={{ mr: 1, color: 'action.active' }} />
+                                    ),
+                                }}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12}>
+                            <TextField
+                                name="email"
+                                label="Correo electrónico"
+                                type="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                variant="outlined"
+                                fullWidth
+                                required
+                                InputProps={{
+                                    startAdornment: (
+                                        <EmailIcon sx={{ mr: 1, color: 'action.active' }} />
+                                    ),
+                                }}
+                            />
+                        </Grid>
+                    </Grid>
+
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            mt: 4,
+                        }}
+                    >
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            color="primary"
+                            disabled={isSubmitting}
+                            startIcon={userToEdit ? <SystemUpdateAltIcon /> : <PersonAddAltIcon />}
+                            sx={{ minWidth: 200 }}
                         >
-                            <Tooltip title="Cancelar y limpiar formulario">
-                                <Button
-                                    fullWidth={isMobile}
-                                    variant="outlined"
-                                    color="error"
-                                    onClick={resetForm}
-                                    startIcon={<CancelOutlinedIcon />}
-                                    disabled={isSubmitting}
-                                    sx={{
-                                        borderWidth: '2px',
-                                        '&:hover': {
-                                            borderWidth: '2px',
-                                        }
-                                    }}
-                                >
-                                    Cancelar
-                                </Button>
-                            </Tooltip>
-
-                            <Tooltip title={userToEdit ? "Guardar cambios del usuario" : "Registrar nuevo usuario"}>
-                                <Button
-                                    type="submit"
-                                    fullWidth
-                                    variant="contained"
-                                    color="primary"
-                                    disabled={isSubmitting}
-                                    startIcon={userToEdit ? <SystemUpdateAltIcon /> : <PersonAddAltIcon />}
-                                    sx={{
-                                        background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-                                        boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.4)}`,
-                                    }}
-                                >
-                                    {isSubmitting ? (
-                                        <>
-                                            <CircularProgress size={24} color="inherit" sx={{ mr: 1 }} />
-                                            {userToEdit ? 'Actualizando...' : 'Registrando...'}
-                                        </>
-                                    ) : (
-                                        userToEdit ? 'Actualizar usuario' : 'Registrar usuario'
-                                    )}
-                                </Button>
-                            </Tooltip>
-                        </Box>
+                            {isSubmitting ? (
+                                <>
+                                    <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+                                    {userToEdit ? 'Actualizando...' : 'Registrando...'}
+                                </>
+                            ) : (
+                                userToEdit ? 'Actualizar usuario' : 'Registrar usuario'
+                            )}
+                        </Button>
                     </Box>
-                </CardContent>
-            </Card>
-        </Fade>
-    );
+                </Box>
 
-    
+                <Snackbar
+                    open={alert.open}
+                    autoHideDuration={6000}
+                    onClose={handleCloseAlert}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                >
+                    <Alert
+                        onClose={handleCloseAlert}
+                        severity={alert.type}
+                        variant="filled"
+                        sx={{ width: '100%' }}
+                    >
+                        {alert.message}
+                    </Alert>
+                </Snackbar>
+            </CardContent>
+        </Card>
+    );
 };
 
 export default AgregarClienteForm;

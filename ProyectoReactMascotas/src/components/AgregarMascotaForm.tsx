@@ -3,24 +3,15 @@ import {
     Button,
     TextField,
     Box,
-    Select,
-    MenuItem,
-    InputLabel,
-    FormControl,
     Snackbar,
     Alert,
     Typography,
     Paper,
     CircularProgress,
-    IconButton,
-    Divider,
     Grid,
     Fade,
-    Backdrop,
     useTheme,
     useMediaQuery,
-    Avatar,
-    Chip,
     Card,
     CardContent,
     Tooltip,
@@ -28,18 +19,17 @@ import {
 import { alpha } from '@mui/material/styles';
 import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
 import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
-import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
-import CloseIcon from '@mui/icons-material/Close';
-import EmailIcon from '@mui/icons-material/Email';
 import PersonIcon from '@mui/icons-material/Person';
 import BadgeIcon from '@mui/icons-material/Badge';
-import PassIcon from '@mui/icons-material/Password';
+import PetsIcon from '@mui/icons-material/Pets';
+import CakeIcon from '@mui/icons-material/Cake';
 
 interface FormMascota {
     idMascota: number | null;
     nombre: string;
     raza: string;
-    peso: string;
+    especie: string;
+    edad: string;
     idCliente: number;
 }
 
@@ -68,7 +58,8 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
     const [formData, setFormData] = useState({
         nombre: '',
         raza: '',
-        peso: '',
+        especie: '',
+        edad: '',
         idCliente: '',
     });
 
@@ -86,11 +77,12 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
             setFormData({
                 nombre: userToEdit.nombre,
                 raza: userToEdit.raza,
-                peso: userToEdit.peso,
-                idCliente: userToEdit.idCliente,
+                especie: userToEdit.especie,
+                edad: userToEdit.edad,
+                idCliente: userToEdit.idCliente.toString(),
             });
         } else {
-            setFormData({ nombre: '', raza: '', peso: '', idCliente: '' });
+            setFormData({ nombre: '', raza: '', especie: '', edad: '', idCliente: '' });
         }
     }, [userToEdit]);
 
@@ -106,19 +98,13 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
         setFocusedField(null);
     };
 
-    const handleUserSelect = (e: React.ChangeEvent<{ value: unknown }>) => {
-        const selectedId = e.target.value as number;
-        const selectedUser = usersList.find((u) => u.idMascota === selectedId);
-        setUserToEdit(selectedUser || null);
-    };
-
     const handleCloseAlert = () => {
         setAlert(prev => ({ ...prev, open: false }));
     };
 
     const resetForm = () => {
         setUserToEdit(null);
-        setFormData({ nombre: '', raza: '', peso: '', idCliente: '' });
+        setFormData({ nombre: '', raza: '', especie: '', edad: '', idCliente: '' });
     };
 
     const validateForm = () => {
@@ -138,11 +124,27 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
             });
             return false;
         }
-        if (!formData.peso.trim()) {
+        if (!formData.especie.trim()) {
             setAlert({
                 open: true,
                 type: 'error',
-                message: 'El peso es obligatorio',
+                message: 'La especie es obligatoria',
+            });
+            return false;
+        }
+        if (!formData.edad.trim()) {
+            setAlert({
+                open: true,
+                type: 'error',
+                message: 'La edad es obligatoria',
+            });
+            return false;
+        }
+        if (!formData.idCliente.trim()) {
+            setAlert({
+                open: true,
+                type: 'error',
+                message: 'Debe seleccionar un cliente',
             });
             return false;
         }
@@ -157,21 +159,23 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
         setIsSubmitting(true);
         console.log("Datos que se van a enviar", formData);
 
-        const url = 'http://localhost:8000/mascotas';
+        const url = 'http://localhost:8000/mascota';
         const method = userToEdit ? 'PUT' : 'POST';
 
         const payload = userToEdit ? {
             idMascota: userToEdit.idMascota,
             nombre: formData.nombre,
             raza: formData.raza,
-            peso: formData.peso,
-            idCliente: formData.idCliente,
+            especie: formData.especie,
+            edad: formData.edad,
+            idCliente: parseInt(formData.idCliente),
         }
             : {
                 nombre: formData.nombre,
                 raza: formData.raza,
-                peso: formData.peso,
-                idCliente: formData.idCliente,
+                especie: formData.especie,
+                edad: formData.edad,
+                idCliente: parseInt(formData.idCliente),
             }
 
         try {
@@ -186,10 +190,10 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                     open: true,
                     type: 'success',
                     message: userToEdit
-                        ? `¡Usuario ${formData.nombre} actualizado exitosamente!`
-                        : `¡Usuario ${formData.nombre} creado exitosamente!`,
+                        ? `¡Mascota ${formData.nombre} actualizada exitosamente!`
+                        : `¡Mascota ${formData.nombre} creada exitosamente!`,
                 });
-                onSuccess(); // recarga tabla y lista
+                onSuccess();
                 resetForm();
             } else {
                 const errorData = await response.json().catch(() => null);
@@ -200,30 +204,11 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
             setAlert({
                 open: true,
                 type: 'error',
-                message: err.message || 'Ocurrió un error al guardar el usuario',
+                message: err.message || 'Ocurrió un error al guardar la mascota',
             });
         } finally {
             setIsSubmitting(false);
         }
-    };
-
-    const getInitials = (nombres: string) => {
-        const n = nombres.charAt(0).toUpperCase();
-        return n;
-    };
-
-    const getAvatarColor = (nombre: string) => {
-        const colors = [
-            theme.palette.primary.main,
-            theme.palette.secondary.main,
-            theme.palette.error.main,
-            theme.palette.warning.main,
-            theme.palette.info.main,
-            theme.palette.success.main,
-        ];
-
-        const charSum = nombre.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-        return colors[charSum % colors.length];
     };
 
     return (
@@ -233,86 +218,27 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                 sx={{
                     borderRadius: 3,
                     overflow: 'visible',
-                    background: `linear-gradient(145deg, ${alpha(theme.palette.background.paper, 0.8)}, ${theme.palette.background.paper})`,
-                    backdropFilter: 'blur(10px)',
+                    backgroundColor: theme.palette.background.paper,
                     boxShadow: `0 10px 40px -10px ${alpha(theme.palette.primary.main, 0.2)}`,
                     position: 'relative',
-                    '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: '8px',
-                        background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                        borderTopLeftRadius: '12px',
-                        borderTopRightRadius: '12px',
-                    }
                 }}
             >
                 <CardContent sx={{ p: { xs: 2, sm: 4 } }}>
                     <Box component="form" onSubmit={handleSubmit} noValidate>
-                        <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+                        <Box display="flex" alignItems="center" justifyContent="center" mb={3}>
                             <Typography
                                 variant="h5"
                                 fontWeight="600"
+                                color="primary"
                                 sx={{
-                                    backgroundImage: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
                                     letterSpacing: '0.5px'
                                 }}
                             >
-                                {userToEdit ? 'Actualizar Usuario' : 'Registro de Usuario'}
+                                {userToEdit ? 'Actualizar Mascota' : 'Registro de Mascota'}
                             </Typography>
                         </Box>
 
-                        <Divider sx={{ mb: 4, opacity: 0.6 }} />
-
                         <Grid container spacing={3}>
-                            <Grid item xs={12}>
-                                <FormControl fullWidth variant="filled">
-                                    <InputLabel id="user-select-label">Seleccionar usuario existente</InputLabel>
-                                    <Select
-                                        labelId="user-select-label"
-                                        value={userToEdit?.idCliente ?? ''}
-                                        onChange={handleUserSelect}
-                                        sx={{
-                                            borderRadius: 1.5,
-                                            '& .MuiSelect-select': {
-                                                py: 1.5
-                                            }
-                                        }}
-                                    >
-                                        <MenuItem value="">
-                                            <Box display="flex" alignItems="center">
-                                                <PersonAddAltIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-                                                <Typography fontWeight="medium">Crear nuevo usuario</Typography>
-                                            </Box>
-                                        </MenuItem>
-                                        <Divider />
-                                        {usersList.map((u) => (
-                                            <MenuItem key={u.idMascota} value={u.idMascota}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Avatar
-                                                        sx={{
-                                                            width: 28,
-                                                            height: 28,
-                                                            mr: 1.5,
-                                                            bgcolor: getAvatarColor(u.nombre),
-                                                            fontSize: '0.75rem'
-                                                        }}
-                                                    >
-                                                        {getInitials(u.nombre)}
-                                                    </Avatar>
-                                                    <Typography variant="body2">{u.nombre}</Typography>
-                                                </Box>
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                            </Grid>
-
                             <Grid item xs={12} md={6}>
                                 <TextField
                                     name="nombre"
@@ -377,19 +303,19 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
 
                             <Grid item xs={12} md={6}>
                                 <TextField
-                                    name="peso"
-                                    label="Peso"
-                                    value={formData.peso}
+                                    name="especie"
+                                    label="Especie"
+                                    value={formData.especie}
                                     onChange={handleChange}
-                                    onFocus={() => handleFocus('peso')}
+                                    onFocus={() => handleFocus('especie')}
                                     onBlur={handleBlur}
                                     variant="outlined"
                                     fullWidth
                                     required
                                     InputProps={{
                                         startAdornment: (
-                                            <BadgeIcon
-                                                color={focusedField === 'peso' ? 'primary' : 'action'}
+                                            <PetsIcon
+                                                color={focusedField === 'especie' ? 'primary' : 'action'}
                                                 sx={{ mr: 1 }}
                                             />
                                         ),
@@ -398,7 +324,7 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                                         '& .MuiOutlinedInput-root': {
                                             borderRadius: 2,
                                             transition: theme.transitions.create(['box-shadow']),
-                                            ...(focusedField === 'peso' && {
+                                            ...(focusedField === 'especie' && {
                                                 boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`
                                             })
                                         }
@@ -406,55 +332,80 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                                 />
                             </Grid>
 
-                            <Grid item xs={12}>
-                                <FormControl fullWidth variant="filled">
-                                    <InputLabel id="cliente-select-label">Seleccionar cliente</InputLabel>
-                                    <Select
-                                        labelId="cliente-select-label"
-                                        value={formData.idCliente}
-                                        onChange={(e) => setFormData({ ...formData, idCliente: e.target.value as string })}
-                                        sx={{
-                                            borderRadius: 1.5,
-                                            '& .MuiSelect-select': {
-                                                py: 1.5
-                                            }
-                                        }}
-                                    >
-                                        {clientesList.map((cliente) => (
-                                            <MenuItem key={cliente.idCliente} value={cliente.idCliente}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Avatar
-                                                        sx={{
-                                                            width: 28,
-                                                            height: 28,
-                                                            mr: 1.5,
-                                                            bgcolor: getAvatarColor(cliente.nombre),
-                                                            fontSize: '0.75rem'
-                                                        }}
-                                                    >
-                                                        {getInitials(cliente.nombre)}
-                                                    </Avatar>
-                                                    <Typography variant="body2">{cliente.nombre}</Typography>
-                                                </Box>
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    name="edad"
+                                    label="Edad (años)"
+                                    value={formData.edad}
+                                    onChange={handleChange}
+                                    onFocus={() => handleFocus('edad')}
+                                    onBlur={handleBlur}
+                                    variant="outlined"
+                                    fullWidth
+                                    required
+                                    type="number"
+                                    InputProps={{
+                                        startAdornment: (
+                                            <CakeIcon
+                                                color={focusedField === 'edad' ? 'primary' : 'action'}
+                                                sx={{ mr: 1 }}
+                                            />
+                                        ),
+                                    }}
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            borderRadius: 2,
+                                            transition: theme.transitions.create(['box-shadow']),
+                                            ...(focusedField === 'edad' && {
+                                                boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`
+                                            })
+                                        }
+                                    }}
+                                />
                             </Grid>
 
-
-
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    name="idCliente"
+                                    label="ID Cliente"
+                                    value={formData.idCliente}
+                                    onChange={handleChange}
+                                    onFocus={() => handleFocus('idCliente')}
+                                    onBlur={handleBlur}
+                                    variant="outlined"
+                                    fullWidth
+                                    required
+                                    type="number"
+                                    InputProps={{
+                                        startAdornment: (
+                                            <PersonIcon
+                                                color={focusedField === 'idCliente' ? 'primary' : 'action'}
+                                                sx={{ mr: 1 }}
+                                            />
+                                        ),
+                                    }}
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            borderRadius: 2,
+                                            transition: theme.transitions.create(['box-shadow']),
+                                            ...(focusedField === 'idCliente' && {
+                                                boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`
+                                            })
+                                        }
+                                    }}
+                                />
+                            </Grid>
                         </Grid>
 
                         <Box
                             sx={{
                                 display: 'flex',
-                                flexDirection: isMobile ? 'column' : 'row',
-                                gap: 2,
+                                justifyContent: 'center',
                                 mt: 4,
                                 '& .MuiButton-root': {
                                     borderRadius: 2,
                                     py: 1.5,
+                                    px: 4,
                                     fontWeight: 500,
                                     letterSpacing: '0.5px',
                                     transition: 'transform 0.2s, box-shadow 0.2s',
@@ -465,36 +416,19 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                                 }
                             }}
                         >
-                            <Tooltip title="Cancelar y limpiar formulario">
-                                <Button
-                                    fullWidth={isMobile}
-                                    variant="outlined"
-                                    color="error"
-                                    onClick={resetForm}
-                                    startIcon={<CancelOutlinedIcon />}
-                                    disabled={isSubmitting}
-                                    sx={{
-                                        borderWidth: '2px',
-                                        '&:hover': {
-                                            borderWidth: '2px',
-                                        }
-                                    }}
-                                >
-                                    Cancelar
-                                </Button>
-                            </Tooltip>
-
                             <Tooltip title={userToEdit ? "Guardar cambios de la mascota" : "Registrar nueva mascota"}>
                                 <Button
                                     type="submit"
-                                    fullWidth
                                     variant="contained"
                                     color="primary"
                                     disabled={isSubmitting}
                                     startIcon={userToEdit ? <SystemUpdateAltIcon /> : <PersonAddAltIcon />}
                                     sx={{
-                                        background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+                                        backgroundColor: theme.palette.primary.main,
                                         boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.4)}`,
+                                        '&:hover': {
+                                            backgroundColor: theme.palette.primary.dark,
+                                        }
                                     }}
                                 >
                                     {isSubmitting ? (
@@ -510,9 +444,20 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                         </Box>
                     </Box>
                 </CardContent>
+
+                <Snackbar
+                    open={alert.open}
+                    autoHideDuration={6000}
+                    onClose={handleCloseAlert}
+                    anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                >
+                    <Alert onClose={handleCloseAlert} severity={alert.type} sx={{ width: '100%' }}>
+                        {alert.message}
+                    </Alert>
+                </Snackbar>
             </Card>
         </Fade>
     );
+};
 
-}
 export default AgregarMascotaForm;
