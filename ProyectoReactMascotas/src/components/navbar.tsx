@@ -11,7 +11,7 @@ import { useState } from "react"
 import CreateIcon from '@mui/icons-material/Create'; 
 
 const navItems = [
-    { text: 'Inicio', path: '/', icon: <HomeIcon sx={{ color: '#fff' }} /> },
+    { ztext: 'Inicio', path: '/', icon: <HomeIcon sx={{ color: '#fff' }} /> },
     { text: 'Agregar Cliente', path: '/moduloClientes', icon: <CreateIcon sx={{ color: '#fff' }} /> },
     { text: 'Agregar Mascota', path: '/moduloMascotas', icon: <CreateIcon sx={{ color: '#fff' }} /> },
 ]
