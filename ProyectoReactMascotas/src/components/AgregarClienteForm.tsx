@@ -261,12 +261,6 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                             <Typography
                                 variant="h5"
                                 fontWeight="600"
-                                sx={{
-                                    backgroundImage: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    letterSpacing: '0.5px'
-                                }}
                             >
                                 {userToEdit ? 'Actualizar Usuario' : 'Registro de Usuario'}
                             </Typography>
@@ -551,60 +545,7 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
         </Fade>
     );
 
-    return (
-        <>
-            <Main />
-
-            <Snackbar
-                open={alert.open}
-                autoHideDuration={6000}
-                onClose={handleCloseAlert}
-                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-                TransitionComponent={Fade}
-            >
-                <Alert
-                    onClose={handleCloseAlert}
-                    severity={alert.type}
-                    variant="filled"
-                    elevation={6}
-                    sx={{
-                        width: '100%',
-                        borderRadius: 2,
-                        boxShadow: `0 8px 32px ${alpha(
-                            alert.type === 'success'
-                                ? theme.palette.success.main
-                                : alert.type === 'error'
-                                    ? theme.palette.error.main
-                                    : theme.palette.info.main,
-                            0.2
-                        )}`,
-                        '& .MuiAlert-icon': {
-                            fontSize: '1.5rem'
-                        }
-                    }}
-                    action={
-                        <IconButton
-                            size="small"
-                            aria-label="close"
-                            color="inherit"
-                            onClick={handleCloseAlert}
-                        >
-                            <CloseIcon fontSize="small" />
-                        </IconButton>
-                    }
-                >
-                    {alert.message}
-                </Alert>
-            </Snackbar>
-
-            <Backdrop
-                sx={{ color: '#fff', zIndex: theme.zIndex.drawer + 1 }}
-                open={isSubmitting}
-            >
-                <CircularProgress color="inherit" />
-            </Backdrop>
-        </>
-    );
+    
 };
 
 export default AgregarClienteForm;
