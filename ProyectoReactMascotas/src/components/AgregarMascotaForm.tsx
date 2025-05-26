@@ -18,7 +18,6 @@ import {
     Select,
     FormControl,
     InputLabel,
-    SelectChangeEvent,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
@@ -38,26 +37,29 @@ interface FormMascota {
 }
 
 interface Cliente {
-    id: number;
+    id?: number;
     idCliente: number;
     nombre: string;
     apellido: string;
     telefono: string;
     email: string;
-    password: string;
+    password?: string;
 }
 
 interface Props {
     userToEdit: FormMascota | null;
     onSuccess: () => void;
     usersList: FormMascota[];
-    clientesList: Cliente[]; 
     setUserToEdit: (user: FormMascota | null) => void;
 }
 
-const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList, setUserToEdit, clientesList }) => {
+const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList, setUserToEdit }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+    // Estado para los clientes (ahora se cargan internamente)
+    const [clientesList, setClientesList] = useState<Cliente[]>([]);
+    const [loadingClientes, setLoadingClientes] = useState(true);
 
     const [formData, setFormData] = useState({
         nombre: '',
@@ -76,6 +78,66 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [focusedField, setFocusedField] = useState<string | null>(null);
 
+    // Cargar clientes al montar el componente
+    useEffect(() => {
+        const cargarClientes = async () => {
+            try {
+                console.log('🔄 Cargando clientes desde API...');
+                const response = await fetch('http://localhost:8000/cliente');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('✅ Respuesta completa de la API:', data);
+                console.log('✅ Tipo de respuesta:', typeof data);
+                console.log('✅ Es array directo:', Array.isArray(data));
+                
+                // Manejar diferentes formatos de respuesta
+                let clientesArray = [];
+                
+                if (Array.isArray(data)) {
+                    // Si la respuesta es directamente un array
+                    clientesArray = data;
+                    console.log('📋 Usando array directo');
+                } else if (data && Array.isArray(data.clientes)) {
+                    // Si la respuesta es un objeto con propiedad 'clientes'
+                    clientesArray = data.clientes;
+                    console.log('📋 Usando data.clientes');
+                } else if (data && Array.isArray(data.data)) {
+                    // Si la respuesta es un objeto con propiedad 'data'
+                    clientesArray = data.data;
+                    console.log('📋 Usando data.data');
+                } else {
+                    console.warn('⚠️ Formato de respuesta no reconocido:', data);
+                    clientesArray = [];
+                }
+                
+                console.log('📊 Clientes procesados:', clientesArray);
+                console.log('📊 Número de clientes:', clientesArray.length);
+                
+                if (clientesArray.length > 0) {
+                    console.log('👤 Primer cliente de ejemplo:', clientesArray[0]);
+                }
+                
+                setClientesList(clientesArray);
+            } catch (error) {
+                console.error('❌ Error cargando clientes:', error);
+                setAlert({
+                    open: true,
+                    type: 'error',
+                    message: 'Error al cargar la lista de clientes',
+                });
+                setClientesList([]);
+            } finally {
+                setLoadingClientes(false);
+            }
+        };
+
+        cargarClientes();
+    }, []);
+
     useEffect(() => {
         if (userToEdit) {
             setFormData({
@@ -90,23 +152,11 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
         }
     }, [userToEdit]);
 
-    // Debug: Agregar log para verificar la lista de clientes
-    useEffect(() => {
-        console.log('=== DEBUG CLIENTES ===');
-        console.log('clientesList:', clientesList);
-        console.log('Tipo de clientesList:', typeof clientesList);
-        console.log('Es array:', Array.isArray(clientesList));
-        console.log('Número de clientes:', clientesList?.length || 0);
-        console.log('Primer cliente:', clientesList?.[0]);
-        console.log('=====================');
-    }, [clientesList]);
-
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // Corregir el manejo del Select
-    const handleSelectChange = (e: SelectChangeEvent<string>) => {
+    const handleSelectChange = (e: any) => {
         console.log('Cliente seleccionado:', e.target.value);
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
@@ -129,9 +179,6 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
     };
 
     const validateForm = () => {
-        console.log('Validando formulario con datos:', formData);
-        console.log('Lista de clientes disponible:', clientesList);
-        
         if (!formData.nombre.trim()) {
             setAlert({
                 open: true,
@@ -164,7 +211,7 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
             });
             return false;
         }
-        // Validar que la edad sea un número positivo
+        
         const edadNum = parseInt(formData.edad);
         if (isNaN(edadNum) || edadNum < 0 || edadNum > 50) {
             setAlert({
@@ -196,20 +243,19 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
         const url = 'http://localhost:8000/mascota';
         const method = userToEdit ? 'PUT' : 'POST';
 
-        // Corregir conversión de tipos
         const payload = userToEdit ? {
             idMascota: userToEdit.idMascota,
             nombre: formData.nombre,
             raza: formData.raza,
             especie: formData.especie,
-            edad: parseInt(formData.edad), // Convertir a número
-            idCliente: parseInt(formData.idCliente), // Convertir a número
+            edad: parseInt(formData.edad),
+            idCliente: parseInt(formData.idCliente),
         } : {
             nombre: formData.nombre,
             raza: formData.raza,
             especie: formData.especie,
-            edad: parseInt(formData.edad), // Convertir a número
-            idCliente: parseInt(formData.idCliente), // Convertir a número
+            edad: parseInt(formData.edad),
+            idCliente: parseInt(formData.idCliente),
         };
 
         try {
@@ -217,14 +263,23 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
             
             const response = await fetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify(payload),
             });
 
             console.log('Response status:', response.status);
 
             if (response.ok) {
-                const responseData = await response.json();
+                const responseText = await response.text();
+                let responseData;
+                try {
+                    responseData = responseText ? JSON.parse(responseText) : {};
+                } catch {
+                    responseData = { message: 'Operación exitosa' };
+                }
+                
                 console.log('Response data:', responseData);
                 
                 setAlert({
@@ -237,20 +292,70 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                 onSuccess();
                 resetForm();
             } else {
-                const errorData = await response.json().catch(() => null);
-                console.error('Error response:', errorData);
+                const errorText = await response.text();
+                let errorData;
+                try {
+                    errorData = errorText ? JSON.parse(errorText) : null;
+                } catch {
+                    errorData = { message: errorText || `Error ${response.status}` };
+                }
+                
                 throw new Error(errorData?.message || `Error ${response.status}: ${response.statusText}`);
             }
         } catch (err: any) {
             console.error('Error completo:', err);
+            
+            let errorMessage = 'Ocurrió un error al guardar la mascota';
+            
+            if (err.name === 'TypeError' && err.message.includes('fetch')) {
+                errorMessage = 'Error de conexión. Verifique que el servidor esté ejecutándose.';
+            } else if (err.message) {
+                errorMessage = err.message;
+            }
+            
             setAlert({
                 open: true,
                 type: 'error',
-                message: err.message || 'Ocurrió un error al guardar la mascota',
+                message: errorMessage,
             });
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const renderClientOptions = () => {
+        if (loadingClientes) {
+            return (
+                <MenuItem value="" disabled>
+                    <em>Cargando clientes...</em>
+                </MenuItem>
+            );
+        }
+
+        if (!clientesList || !Array.isArray(clientesList) || clientesList.length === 0) {
+            return (
+                <MenuItem value="" disabled>
+                    <em>No hay clientes disponibles</em>
+                </MenuItem>
+            );
+        }
+
+        return clientesList.map((cliente, index) => {
+            if (!cliente || !cliente.nombre || !cliente.apellido) {
+                return null;
+            }
+
+            const clienteId = cliente.idCliente || cliente.id;
+            if (clienteId === undefined || clienteId === null) {
+                return null;
+            }
+
+            return (
+                <MenuItem key={`cliente-${clienteId}-${index}`} value={clienteId.toString()}>
+                    {`${cliente.nombre} ${cliente.apellido}`}
+                </MenuItem>
+            );
+        }).filter(Boolean);
     };
 
     return (
@@ -418,6 +523,7 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                                         label="Seleccionar Cliente"
                                         onFocus={() => handleFocus('idCliente')}
                                         onBlur={handleBlur}
+                                        disabled={loadingClientes}
                                         startAdornment={
                                             <PersonIcon
                                                 color={focusedField === 'idCliente' ? 'primary' : 'action'}
@@ -435,59 +541,14 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                                         <MenuItem value="">
                                             <em>-- Seleccione un cliente --</em>
                                         </MenuItem>
-                                        {(() => {
-                                            console.log('Renderizando clientes. Array:', clientesList);
-                                            console.log('Longitud:', clientesList?.length);
-                                            
-                                            if (!clientesList) {
-                                                console.log('clientesList es null/undefined');
-                                                return (
-                                                    <MenuItem value="" disabled>
-                                                        <em>Cargando clientes...</em>
-                                                    </MenuItem>
-                                                );
-                                            }
-                                            
-                                            if (!Array.isArray(clientesList)) {
-                                                console.log('clientesList no es un array:', typeof clientesList);
-                                                return (
-                                                    <MenuItem value="" disabled>
-                                                        <em>Error: datos de clientes inválidos</em>
-                                                    </MenuItem>
-                                                );
-                                            }
-                                            
-                                            if (clientesList.length === 0) {
-                                                console.log('clientesList está vacío');
-                                                return (
-                                                    <MenuItem value="" disabled>
-                                                        <em>No hay clientes disponibles</em>
-                                                    </MenuItem>
-                                                );
-                                            }
-                                            
-                                            console.log('Mapeando clientes:', clientesList);
-                                            return clientesList.map((cliente, index) => {
-                                                console.log(`Cliente ${index}:`, cliente);
-                                                
-                                                // Verificar si el cliente tiene las propiedades necesarias
-                                                if (!cliente || !cliente.nombre || !cliente.apellido) {
-                                                    console.warn(`Cliente ${index} tiene datos incompletos:`, cliente);
-                                                    return null;
-                                                }
-                                                
-                                                const key = cliente.idCliente || cliente.id || index;
-                                                const value = (cliente.idCliente || cliente.id || '').toString();
-                                                
-                                                return (
-                                                    <MenuItem key={key} value={value}>
-                                                        {`${cliente.nombre} ${cliente.apellido}`}
-                                                    </MenuItem>
-                                                );
-                                            }).filter(Boolean); // Filtrar elementos null
-                                        })()}
+                                        {renderClientOptions()}
                                     </Select>
                                 </FormControl>
+
+                                {/* Info de debug */}
+                                <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+                                    {loadingClientes ? 'Cargando...' : `${clientesList.length} clientes disponibles`}
+                                </Typography>
                             </Grid>
                         </Grid>
 
@@ -515,7 +576,7 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                                     type="submit"
                                     variant="contained"
                                     color="primary"
-                                    disabled={isSubmitting}
+                                    disabled={isSubmitting || loadingClientes}
                                     startIcon={userToEdit ? <SystemUpdateAltIcon /> : <PersonAddAltIcon />}
                                     sx={{
                                         backgroundColor: theme.palette.primary.main,
