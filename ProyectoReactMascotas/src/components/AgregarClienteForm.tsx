@@ -41,7 +41,7 @@ interface FormCliente {
     apellido: string;
     telefono: string;
     email: string;
-    password: string;
+    
 }
 
 interface Props {
@@ -59,8 +59,7 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
         nombres: '',
         apellidos: '',
         telefono:'',
-        email: '',
-        password:'',
+        email: ''
     });
 
     const [alert, setAlert] = useState<{ open: boolean; type: 'success' | 'error' | 'info'; message: string }>({
@@ -78,11 +77,11 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                 nombres: userToEdit.nombre,
                 apellidos: userToEdit.apellido,
                 telefono: userToEdit.telefono,
-                email: userToEdit.email,
-                password: userToEdit.password,
+                email: userToEdit.email
+                
             });
         } else {
-            setFormData({ nombres: '', apellidos: '', telefono: '', email: '', password:'' });
+            setFormData({ nombres: '', apellidos: '', telefono: '', email: '' });
         }
     }, [userToEdit]);
 
@@ -110,7 +109,7 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
 
     const resetForm = () => {
         setUserToEdit(null);
-        setFormData({ nombres: '', apellidos: '', telefono:'', email: '', password:'' });
+        setFormData({ nombres: '', apellidos: '', telefono:'', email: '' });
     };
 
     const validateForm = () => {
@@ -167,15 +166,13 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
             nombre: formData.nombres,
             apellido: formData.apellidos,
             telefono: formData.telefono,
-            email: formData.email,
-            password: formData.password,
+            email: formData.email
         }
         :{
             nombre: formData.nombres,
             apellido: formData.apellidos,
             telefono: formData.telefono,
-            email: formData.email,
-            password: formData.password,
+            email: formData.email
         }
 
         try {
@@ -450,36 +447,7 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                                 />
                             </Grid>
 
-                            <Grid item xs={12} md={6}>
-                                <TextField
-                                    name="password"
-                                    label="Password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    onFocus={() => handleFocus('password')}
-                                    onBlur={handleBlur}
-                                    variant="outlined"
-                                    fullWidth
-                                    required
-                                    InputProps={{
-                                        startAdornment: (
-                                            <PassIcon
-                                                color={focusedField === 'password' ? 'primary' : 'action'}
-                                                sx={{ mr: 1 }}
-                                            />
-                                        ),
-                                    }}
-                                    sx={{
-                                        '& .MuiOutlinedInput-root': {
-                                            borderRadius: 2,
-                                            transition: theme.transitions.create(['box-shadow']),
-                                            ...(focusedField === 'password' && {
-                                                boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`
-                                            })
-                                        }
-                                    }}
-                                />
-                            </Grid>
+                      
 
                         </Grid>
 
