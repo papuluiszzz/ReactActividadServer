@@ -1,15 +1,4 @@
-const handleCloseAlert = () => {
-        setAlert(prev => ({ ...prev, open: false }));
-    };
-
-    const resetForm = () => {
-        setUserToEdit(null);
-        setFormData({ nombres: '', apellidos: '', telefono:'', email: '' });
-    };    const handleUserSelect = (e: React.ChangeEvent<{ value: unknown }>) => {
-        const selectedId = e.target.value as number;
-        const selectedUser = usersList.find((u) => u.idCliente === selectedId);
-        setUserToEdit(selectedUser || null);
-    };import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
     Button,
     TextField,
@@ -31,6 +20,7 @@ import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
 import EmailIcon from '@mui/icons-material/Email';
 import PersonIcon from '@mui/icons-material/Person';
 import BadgeIcon from '@mui/icons-material/Badge';
+import PhoneIcon from '@mui/icons-material/Phone';
 
 interface FormCliente {
     idCliente: number | null;
@@ -38,7 +28,6 @@ interface FormCliente {
     apellido: string;
     telefono: string;
     email: string;
-    
 }
 
 interface Props {
@@ -52,10 +41,11 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+    // Cambiado para usar los mismos nombres que la API
     const [formData, setFormData] = useState({
-        nombres: '',
-        apellidos: '',
-        telefono:'',
+        nombre: '',
+        apellido: '',
+        telefono: '',
         email: '',
     });
 
@@ -70,13 +60,13 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
     useEffect(() => {
         if (userToEdit) {
             setFormData({
-                nombres: userToEdit.nombre,
-                apellidos: userToEdit.apellido,
+                nombre: userToEdit.nombre,
+                apellido: userToEdit.apellido,
                 telefono: userToEdit.telefono,
                 email: userToEdit.email,
             });
         } else {
-            setFormData({ nombres: '', apellidos: '', telefono: '', email: '' });
+            setFormData({ nombre: '', apellido: '', telefono: '', email: '' });
         }
     }, [userToEdit]);
 
@@ -84,10 +74,23 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const handleCloseAlert = () => {
+        setAlert(prev => ({ ...prev, open: false }));
+    };
 
+    const resetForm = () => {
+        setUserToEdit(null);
+        setFormData({ nombre: '', apellido: '', telefono: '', email: '' });
+    };
+
+    const handleUserSelect = (e: React.ChangeEvent<{ value: unknown }>) => {
+        const selectedId = e.target.value as number;
+        const selectedUser = usersList.find((u) => u.idCliente === selectedId);
+        setUserToEdit(selectedUser || null);
+    };
 
     const validateForm = () => {
-        if (!formData.nombres.trim()) {
+        if (!formData.nombre.trim()) {
             setAlert({
                 open: true,
                 type: 'error',
@@ -95,11 +98,19 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
             });
             return false;
         }
-        if (!formData.apellidos.trim()) {
+        if (!formData.apellido.trim()) {
             setAlert({
                 open: true,
                 type: 'error',
                 message: 'El apellido es obligatorio',
+            });
+            return false;
+        }
+        if (!formData.telefono.trim()) {
+            setAlert({
+                open: true,
+                type: 'error',
+                message: 'El teléfono es obligatorio',
             });
             return false;
         }
@@ -121,6 +132,16 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
             });
             return false;
         }
+        // Validación básica de teléfono
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(formData.telefono.replace(/\s+/g, ''))) {
+            setAlert({
+                open: true,
+                type: 'error',
+                message: 'Ingrese un teléfono válido (10 dígitos)',
+            });
+            return false;
+        }
         return true;
     };
 
@@ -135,19 +156,11 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
         const url = 'http://localhost:8000/cliente';
         const method = userToEdit ? 'PUT' : 'POST';
 
-        const payload = userToEdit?{
+        // Simplificado el payload - usar directamente formData
+        const payload = userToEdit ? {
             idCliente: userToEdit.idCliente,
-            nombre: formData.nombres,
-            apellido: formData.apellidos,
-            telefono: formData.telefono,
-            email: formData.email
-        }
-        :{
-            nombre: formData.nombres,
-            apellido: formData.apellidos,
-            telefono: formData.telefono,
-            email: formData.email
-        }
+            ...formData
+        } : formData;
 
         try {
             const response = await fetch(url, {
@@ -156,22 +169,29 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                 body: JSON.stringify(payload),
             });
 
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            
             if (response.ok) {
+                const responseData = await response.json();
+                console.log('Response data:', responseData);
+                
                 setAlert({
                     open: true,
                     type: 'success',
                     message: userToEdit
-                        ? `¡Usuario ${formData.nombres} actualizado exitosamente!`
-                        : `¡Usuario ${formData.nombres} creado exitosamente!`,
+                        ? `¡Usuario ${formData.nombre} actualizado exitosamente!`
+                        : `¡Usuario ${formData.nombre} creado exitosamente!`,
                 });
                 onSuccess(); // recarga tabla y lista
                 resetForm();
             } else {
                 const errorData = await response.json().catch(() => null);
-                throw new Error(errorData?.message || 'Error en el servidor');
+                console.error('Error response:', errorData);
+                throw new Error(errorData?.message || `Error ${response.status}: ${response.statusText}`);
             }
         } catch (err: any) {
-            console.error(err);
+            console.error('Error completo:', err);
             setAlert({
                 open: true,
                 type: 'error',
@@ -181,8 +201,6 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
             setIsSubmitting(false);
         }
     };
-
-
 
     return (
         <Card
@@ -207,12 +225,11 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                     <Divider sx={{ mb: 4 }} />
 
                     <Grid container spacing={3}>
-
                         <Grid item xs={12} md={6}>
                             <TextField
-                                name="nombres"
-                                label="Nombres"
-                                value={formData.nombres}
+                                name="nombre"
+                                label="Nombre"
+                                value={formData.nombre}
                                 onChange={handleChange}
                                 variant="outlined"
                                 fullWidth
@@ -227,9 +244,9 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
 
                         <Grid item xs={12} md={6}>
                             <TextField
-                                name="apellidos"
-                                label="Apellidos"
-                                value={formData.apellidos}
+                                name="apellido"
+                                label="Apellido"
+                                value={formData.apellido}
                                 onChange={handleChange}
                                 variant="outlined"
                                 fullWidth
@@ -245,21 +262,22 @@ const AgregarClienteForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                         <Grid item xs={12} md={6}>
                             <TextField
                                 name="telefono"
-                                label="Telefono"
+                                label="Teléfono"
                                 value={formData.telefono}
                                 onChange={handleChange}
                                 variant="outlined"
                                 fullWidth
                                 required
+                                type="tel"
                                 InputProps={{
                                     startAdornment: (
-                                        <BadgeIcon sx={{ mr: 1, color: 'action.active' }} />
+                                        <PhoneIcon sx={{ mr: 1, color: 'action.active' }} />
                                     ),
                                 }}
                             />
                         </Grid>
 
-                        <Grid item xs={12}>
+                        <Grid item xs={12} md={6}>
                             <TextField
                                 name="email"
                                 label="Correo electrónico"

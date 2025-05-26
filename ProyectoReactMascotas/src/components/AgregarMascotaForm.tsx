@@ -6,7 +6,6 @@ import {
     Snackbar,
     Alert,
     Typography,
-    Paper,
     CircularProgress,
     Grid,
     Fade,
@@ -15,6 +14,10 @@ import {
     Card,
     CardContent,
     Tooltip,
+    MenuItem,
+    Select,
+    FormControl,
+    InputLabel,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
@@ -29,7 +32,7 @@ interface FormMascota {
     nombre: string;
     raza: string;
     especie: string;
-    edad: string;
+    edad: number;
     idCliente: number;
 }
 
@@ -78,7 +81,7 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                 nombre: userToEdit.nombre,
                 raza: userToEdit.raza,
                 especie: userToEdit.especie,
-                edad: userToEdit.edad,
+                edad: userToEdit.edad.toString(),
                 idCliente: userToEdit.idCliente.toString(),
             });
         } else {
@@ -87,6 +90,11 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
     }, [userToEdit]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSelectChange = (e: any) => {
+        console.log('Cliente seleccionado:', e.target.value);
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
@@ -108,6 +116,9 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
     };
 
     const validateForm = () => {
+        console.log('Validando formulario con datos:', formData);
+        console.log('Lista de clientes disponible:', clientesList);
+        
         if (!formData.nombre.trim()) {
             setAlert({
                 open: true,
@@ -140,6 +151,16 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
             });
             return false;
         }
+        // Validar que la edad sea un número positivo
+        const edadNum = parseInt(formData.edad);
+        if (isNaN(edadNum) || edadNum < 0 || edadNum > 50) {
+            setAlert({
+                open: true,
+                type: 'error',
+                message: 'La edad debe ser un número válido entre 0 y 50 años',
+            });
+            return false;
+        }
         if (!formData.idCliente.trim()) {
             setAlert({
                 open: true,
@@ -162,30 +183,37 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
         const url = 'http://localhost:8000/mascota';
         const method = userToEdit ? 'PUT' : 'POST';
 
+        // Corregir conversión de tipos
         const payload = userToEdit ? {
             idMascota: userToEdit.idMascota,
             nombre: formData.nombre,
             raza: formData.raza,
             especie: formData.especie,
-            edad: formData.edad,
-            idCliente: parseInt(formData.idCliente),
-        }
-            : {
-                nombre: formData.nombre,
-                raza: formData.raza,
-                especie: formData.especie,
-                edad: formData.edad,
-                idCliente: parseInt(formData.idCliente),
-            }
+            edad: parseInt(formData.edad), // Convertir a número
+            idCliente: parseInt(formData.idCliente), // Convertir a número
+        } : {
+            nombre: formData.nombre,
+            raza: formData.raza,
+            especie: formData.especie,
+            edad: parseInt(formData.edad), // Convertir a número
+            idCliente: parseInt(formData.idCliente), // Convertir a número
+        };
 
         try {
+            console.log('Payload enviado:', payload);
+            
             const response = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
 
+            console.log('Response status:', response.status);
+
             if (response.ok) {
+                const responseData = await response.json();
+                console.log('Response data:', responseData);
+                
                 setAlert({
                     open: true,
                     type: 'success',
@@ -197,10 +225,11 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                 resetForm();
             } else {
                 const errorData = await response.json().catch(() => null);
-                throw new Error(errorData?.message || 'Error en el servidor');
+                console.error('Error response:', errorData);
+                throw new Error(errorData?.message || `Error ${response.status}: ${response.statusText}`);
             }
         } catch (err: any) {
-            console.error(err);
+            console.error('Error completo:', err);
             setAlert({
                 open: true,
                 type: 'error',
@@ -344,6 +373,7 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                                     fullWidth
                                     required
                                     type="number"
+                                    inputProps={{ min: 0, max: 50 }}
                                     InputProps={{
                                         startAdornment: (
                                             <CakeIcon
@@ -365,35 +395,53 @@ const AgregarMascotaForm: React.FC<Props> = ({ userToEdit, onSuccess, usersList,
                             </Grid>
 
                             <Grid item xs={12} md={6}>
-                                <TextField
-                                    name="idCliente"
-                                    label="ID Cliente"
-                                    value={formData.idCliente}
-                                    onChange={handleChange}
-                                    onFocus={() => handleFocus('idCliente')}
-                                    onBlur={handleBlur}
-                                    variant="outlined"
-                                    fullWidth
-                                    required
-                                    type="number"
-                                    InputProps={{
-                                        startAdornment: (
+                                <FormControl fullWidth variant="outlined" required>
+                                    <InputLabel id="cliente-select-label">Seleccionar Cliente</InputLabel>
+                                    <Select
+                                        labelId="cliente-select-label"
+                                        name="idCliente"
+                                        value={formData.idCliente}
+                                        onChange={handleSelectChange}
+                                        label="Seleccionar Cliente"
+                                        onFocus={() => handleFocus('idCliente')}
+                                        onBlur={handleBlur}
+                                        startAdornment={
                                             <PersonIcon
                                                 color={focusedField === 'idCliente' ? 'primary' : 'action'}
-                                                sx={{ mr: 1 }}
+                                                sx={{ mr: 1, ml: 1 }}
                                             />
-                                        ),
-                                    }}
-                                    sx={{
-                                        '& .MuiOutlinedInput-root': {
+                                        }
+                                        sx={{
                                             borderRadius: 2,
                                             transition: theme.transitions.create(['box-shadow']),
                                             ...(focusedField === 'idCliente' && {
                                                 boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`
                                             })
-                                        }
-                                    }}
-                                />
+                                        }}
+                                    >
+                                        <MenuItem value="" disabled>
+                                            <em>-- Seleccione un cliente --</em>
+                                        </MenuItem>
+                                        {clientesList && clientesList.length > 0 ? (
+                                            clientesList.map((cliente) => (
+                                                <MenuItem key={cliente.idCliente} value={cliente.idCliente.toString()}>
+                                                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                                        <Typography variant="body1" fontWeight="500">
+                                                            {`${cliente.nombre} ${cliente.apellido}`}
+                                                        </Typography>
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            ID: {cliente.idCliente} • {cliente.email}
+                                                        </Typography>
+                                                    </Box>
+                                                </MenuItem>
+                                            ))
+                                        ) : (
+                                            <MenuItem value="" disabled>
+                                                <em>No hay clientes disponibles</em>
+                                            </MenuItem>
+                                        )}
+                                    </Select>
+                                </FormControl>
                             </Grid>
                         </Grid>
 
